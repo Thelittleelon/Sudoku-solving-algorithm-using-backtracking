@@ -1,51 +1,25 @@
 #include "stdafx.h"
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <ctime>
-#include <cstdlib>
+#include "sudoku_generating.h"  
+#include "stdlib.h"
+#include "time.h"
+//#include <iostream>
+//#include <vector>
+//#include <algorithm>
+//#include <ctime>
+//#include <cstdlib>
 
-using namespace std;
+//using namespace std;
 
-const int SIZE = 9;
-int solvedGrid[SIZE][SIZE];
-int puzzleGrid[SIZE][SIZE];
 
-void printGrid(int grid[SIZE][SIZE]);
-bool isSafe(int grid[SIZE][SIZE], int row, int col, int num);
-bool fillGrid(int grid[SIZE][SIZE]);
-bool findEmptyLocation(int grid[SIZE][SIZE], int &row, int &col);
-void hideNumbers(int grid[SIZE][SIZE], int minHidden, int maxHidden);
-
-int main() {
-	srand(time(0));
-
-	fillGrid(solvedGrid);
-
-	// Copy solvedGrid to puzzleGrid
-	for (int row = 0; row < SIZE; row++) {
-		for (int col = 0; col < SIZE; col++) {
-			puzzleGrid[row][col] = solvedGrid[row][col];
-		}
-	}
-
-	hideNumbers(puzzleGrid, 20, 40);
-
-	cout << "Sudoku Puzzle:" << endl;
-	printGrid(puzzleGrid);
-
-	cout << "\nSolved Sudoku:" << endl;
-	printGrid(solvedGrid);
-
-	return 0;
-}
 
 void printGrid(int grid[SIZE][SIZE]) {
 	for (int row = 0; row < SIZE; row++) {
 		for (int col = 0; col < SIZE; col++) {
-			cout << grid[row][col] << " ";
+			//std::cout << grid[row][col] << " ";
+			printf("%d ", grid[row][col]);
 		}
-		cout << endl;
+		//std::cout << endl;
+		printf("\n");
 	}
 }
 
@@ -68,11 +42,18 @@ bool fillGrid(int grid[SIZE][SIZE]) {
 	int row, col;
 	if (!findEmptyLocation(grid, row, col))
 		return true; // Success!
+	int i;
+	int num;
+	int numbers[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	//random_shuffle(numbers.begin(), numbers.end());
 
-	vector<int> numbers{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	random_shuffle(numbers.begin(), numbers.end());
+	for (i = 0; i < 9; i++)
+	{
+		numbers[i] = 1 + rand() % 9;
+	}
 
-	for (int num : numbers) {
+	for (i = 0; i < 9; i++) {
+		num = numbers[i];
 		if (isSafe(grid, row, col, num)) {
 			grid[row][col] = num;
 			if (fillGrid(grid))
