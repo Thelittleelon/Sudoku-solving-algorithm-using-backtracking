@@ -2,23 +2,13 @@
 #include "sudoku_generating.h"  
 #include "stdlib.h"
 #include "time.h"
-//#include <iostream>
-//#include <vector>
-//#include <algorithm>
-//#include <ctime>
-//#include <cstdlib>
-
-//using namespace std;
-
 
 
 void printGrid(int grid[SIZE][SIZE]) {
 	for (int row = 0; row < SIZE; row++) {
 		for (int col = 0; col < SIZE; col++) {
-			//std::cout << grid[row][col] << " ";
 			printf("%d ", grid[row][col]);
 		}
-		//std::cout << endl;
 		printf("\n");
 	}
 }
@@ -45,7 +35,6 @@ bool fillGrid(int grid[SIZE][SIZE]) {
 	int i;
 	int num;
 	int numbers[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	//random_shuffle(numbers.begin(), numbers.end());
 
 	for (i = 0; i < 9; i++)
 	{
