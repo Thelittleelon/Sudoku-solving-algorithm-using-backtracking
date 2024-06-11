@@ -4,14 +4,6 @@
 #include "time.h"
 
 
-void printGrid(int grid[SIZE][SIZE]) {
-	for (int row = 0; row < SIZE; row++) {
-		for (int col = 0; col < SIZE; col++) {
-			printf("%d ", grid[row][col]);
-		}
-		printf("\n");
-	}
-}
 
 bool isSafe(int grid[SIZE][SIZE], int row, int col, int num) {
 	for (int x = 0; x < SIZE; x++) {
