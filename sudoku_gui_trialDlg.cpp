@@ -6,8 +6,10 @@
 #include "sudoku_gui_trial.h"
 #include "sudoku_gui_trialDlg.h"
 #include "afxdialogex.h"
-#include "sudoku_generating.h"
-
+#include "time.h"
+#include "stdlib.h"
+//#include "sudoku_generating.h"
+#include "unique_generating.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -15,40 +17,49 @@
 int solvedGrid[SIZE][SIZE];
 int puzzleGrid[SIZE][SIZE];
 
+int mistakeCount;
+int secondCount, minuteCount;
+
+int seedCounter = 0;
+int compl = 0;
+
+int newGame;
 void createSudoku() {
-	srand(time(0));
+	//unsigned int seed = (unsigned int)(time(NULL) ^ (clock() + seedCounter++));
 
+	srand(GetTickCount());
+	//srand(0);
+	//int grid[SIZE][SIZE] = { 0 };
+
+	// Fill the grid with a valid Sudoku solution
+	memset(solvedGrid, 0, sizeof(solvedGrid));
 	fillGrid(solvedGrid);
-
-	// Copy solvedGrid to puzzleGrid
+	
+		 //Copy solvedGrid to puzzleGrid
 	for (int row = 0; row < SIZE; row++) {
 		for (int col = 0; col < SIZE; col++) {
 			puzzleGrid[row][col] = solvedGrid[row][col];
 		}
 	}
+	removeNumbers(puzzleGrid, 35, 51);
 
-	hideNumbers(puzzleGrid, 25, 50);
+	//printf("\nSudoku Puzzle with Unique Solution:\n");
+	//printGrid(grid);
+
 }
 
-char sudoku_data[9][9] = {
-	{ '1','2', '3', '1', '1', '1', '1', '1', '1' },
-	{ '1',' ', '1', '1', '1', '1', '1', '1', '1' },
-	{ '1','1', '4', '1', '1', '1', '1', '1', '1' },
-	{ '1','1', '1', '1', '1', '5', '1', '1', '1' },
-	{ '1','1', '1', '1', '1', '1', '1', '1', '1' },
-	{ '1','1', '1', '1', '1', '1', '1', '1', '1' },
-	{ '1','1', '1', '1', '1', '1', '1', '1', '1' },
-	{ '1','1', '1', '1', '1', '7', '1', '1', '1' },
-	{ '1','1', '1', '1', '1', '1', '1', '1', '1' }
-};
+
+
+
+
+char sudoku_data[9][9];
 
 int nDX;
 int nDY;
 int selRow, selCol;
 int currentSelData = -1;
 
-//extern int solvedGrid[SIZE][SIZE];
-//extern int puzzleGrid[SIZE][SIZE];
+
 // CAboutDlg dialog used for App About
 
 class CAboutDlg : public CDialogEx
@@ -89,6 +100,9 @@ END_MESSAGE_MAP()
 Csudoku_gui_trialDlg::Csudoku_gui_trialDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_SUDOKU_GUI_TRIAL_DIALOG, pParent)
 	, m_n_data_choice(0)
+	, m_sz_mistake(_T(""))
+	, m_sz_time_count(_T(""))
+	, m_n_start_time(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -98,6 +112,8 @@ void Csudoku_gui_trialDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	//  DDX_CBString(pDX, IDC_DATA_CHOICE, m_n_data_choice);
 	DDX_CBIndex(pDX, IDC_DATA_CHOICE, m_n_data_choice);
+	DDX_Text(pDX, IDC_MISTAKE, m_sz_mistake);
+	DDX_Text(pDX, IDC_TIME_COUNT, m_sz_time_count);
 }
 
 BEGIN_MESSAGE_MAP(Csudoku_gui_trialDlg, CDialogEx)
@@ -106,6 +122,8 @@ BEGIN_MESSAGE_MAP(Csudoku_gui_trialDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_LBUTTONUP()
 	ON_BN_CLICKED(IDC_UPDATE_DATA, &Csudoku_gui_trialDlg::OnBnClickedUpdateData)
+	ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_NEW_GAME, &Csudoku_gui_trialDlg::OnBnClickedNewGame)
 END_MESSAGE_MAP()
 
 
@@ -140,23 +158,9 @@ BOOL Csudoku_gui_trialDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
+	newGame = 0;
 	// TODO: Add extra initialization here
-	int sudRow, sudCol;
-	createSudoku();
-	for (sudRow = 0; sudRow < SIZE; sudRow++)
-	{
-		for (sudCol = 0; sudCol < SIZE; sudCol++)
-		{
-			if (puzzleGrid[sudRow][sudCol] == 0)
-			{
-				sudoku_data[sudRow][sudCol] = ' ';
-			}
-			else
-			{
-				sudoku_data[sudRow][sudCol] = puzzleGrid[sudRow][sudCol] + '0';
-			}
-		}
-	}
+	
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -218,6 +222,9 @@ int Csudoku_gui_trialDlg::draw_grid()
 	CPaintDC dc(this); // device context for painting
 	CRect rcClient;
 	GetClientRect(&rcClient);
+	CPen* newPen = new CPen(PS_DASH | PS_GEOMETRIC, 3, RGB(0, 0, 0));
+	CPen* pOldPen = (CPen*)dc.SelectObject(newPen);
+
 	//Put a horizontal line in the middle of the dialog
 	nDX = (rcClient.right - rcClient.left) / 13;
 	nDY = (rcClient.bottom - rcClient.top) / 13;
@@ -228,7 +235,10 @@ int Csudoku_gui_trialDlg::draw_grid()
 	dc.LineTo(10 * nDX, nDY);
 	dc.MoveTo(nDX, nDY);
 	dc.LineTo(nDX, 10 * nDY);
-	for (int i = 2; i <= 10; i++)
+
+	
+
+	for (int i = 4; i <= 10; i+=3)
 	{
 		dc.MoveTo(nDX, i * nDY);
 		dc.LineTo(10 * nDX, i * nDY);
@@ -237,6 +247,18 @@ int Csudoku_gui_trialDlg::draw_grid()
 		dc.LineTo(i * nDX, 10 * nDY);
 	}
 
+	dc.SelectObject(pOldPen);
+	for (int i = 2; i <= 9; i++)
+	{
+		if (i != 4 && i != 7)
+		{
+			dc.MoveTo(nDX, i * nDY);
+			dc.LineTo(10 * nDX, i * nDY);
+
+			dc.MoveTo(i * nDX, nDY);
+			dc.LineTo(i * nDX, 10 * nDY);
+		}
+	}
 
 	for (row = 0; row < 9; row++)
 	{
@@ -245,19 +267,9 @@ int Csudoku_gui_trialDlg::draw_grid()
 			TCHAR sOut[2] = L" ";
 			sOut[0] = sudoku_data[row][col];
 			dc.TextOutW(nDX*(col + 1) + nDX / 3, nDY*(row + 1) + nDY / 4, sOut);
-			//dc.TextOutW(nDX + nDX / 4, nDY + nDY / 4, L"a");
 		}
 	}
 
-
-
-
-
-	dc.MoveTo(2 * nDX, nDY);
-	dc.LineTo(2 * nDX, 10 * nDY);
-
-	dc.MoveTo(3 * nDX, nDY);
-	dc.LineTo(3 * nDX, 10 * nDY);
 	return 0;
 }
 
@@ -281,7 +293,7 @@ void Csudoku_gui_trialDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	{
 		//MessageBox(ss);
 		int currentData = sudoku_data[tempRow][tempCol];
-		if (currentData == ' ')
+		if (currentData == ' ' && mistakeCount < 3)
 		{
 			m_n_data_choice = currentData - '1';
 			currentSelData = m_n_data_choice;
@@ -298,33 +310,62 @@ void Csudoku_gui_trialDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 void Csudoku_gui_trialDlg::OnBnClickedUpdateData()
 {
-	int compl = 0;
-	UpdateData();
-	if (solvedGrid[selRow][selCol] == m_n_data_choice + 1)
+	if (newGame == 0)
 	{
-		sudoku_data[selRow][selCol] = m_n_data_choice + '1';
-		currentSelData = -1;
-		InvalidateRect(NULL);
+		MessageBox(L"You have to create a new game!");
 	}
 	else
 	{
-		MessageBox(L"Wrong answer!");
-	}
-	//check for completion
-	for (int i = 0; i < SIZE; i++)
-	{
-		for (int j = 0; j < SIZE; j++)
+		TCHAR sss[1000];
+		UpdateData();
+		if (solvedGrid[selRow][selCol] == m_n_data_choice + 1 && mistakeCount < 3)
 		{
-			//compl = 0;
-			if (sudoku_data[i][j] == ' ')
+			sudoku_data[selRow][selCol] = m_n_data_choice + '1';
+			currentSelData = -1;
+			InvalidateRect(NULL);
+		}
+		else if (mistakeCount < 2)
+		{
+			TCHAR ss[1000];
+			mistakeCount++;
+			wsprintf(ss, L"Wrong answer!", mistakeCount);
+			MessageBox(ss);
+			wsprintf(ss, L"Mistake: %d/3", mistakeCount);
+			m_sz_mistake = ss;
+			UpdateData(false);
+			InvalidateRect(NULL);
+		}
+		else
+		{
+			TCHAR sss[100];
+			mistakeCount++;
+			KillTimer(1);
+			wsprintf(sss, L"Mistake: %d/3", mistakeCount);
+			m_sz_mistake = sss;
+			UpdateData(false);
+			MessageBox(L"You lost!");
+			return;
+		}
+		//check for completion
+		compl = 0;
+		for (int i = 0; i < SIZE; i++)
+		{
+			for (int j = 0; j < SIZE; j++)
 			{
-				compl++;
+				//compl = 0;
+				if (sudoku_data[i][j] == ' ' || sudoku_data[i][j] == 'X')
+				{
+					compl++;
+				}
 			}
 		}
-	}
-	if (compl == 0)
-	{
-		MessageBox(L"Congratulations! You have done it");
+		if (compl == 0)
+		{
+			//MessageBox(L"Congratulations! You have done it");
+			KillTimer(1);
+			wsprintf(sss, L"Congratulations! You have done it\nTime: %d:%02d", minuteCount, secondCount % 60);
+			MessageBox(sss);
+		}
 	}
 	// TODO: Add your control notification handler code here
 }
@@ -346,4 +387,63 @@ void Csudoku_gui_trialDlg::OnCancel()
 
 		CDialogEx::OnCancel();
 	}
+}
+
+
+void Csudoku_gui_trialDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: Add your message handler code here and/or call default
+	if (nIDEvent == 1)
+	{
+		int timePass = GetTickCount() - m_n_start_time;
+		TCHAR ss[100];
+		UpdateData();
+		secondCount = (timePass + 500) / 1000;
+		minuteCount = secondCount / 60;
+		wsprintf(ss, L"Time: %d:%02d", minuteCount, secondCount % 60);
+		m_sz_time_count = ss;
+		UpdateData(false);
+	}
+
+	CDialogEx::OnTimer(nIDEvent);
+}
+
+void Csudoku_gui_trialDlg::createNewGame()
+{
+	int sudRow, sudCol;
+	createSudoku();
+	mistakeCount = 0;
+	for (sudRow = 0; sudRow < SIZE; sudRow++)
+	{
+		for (sudCol = 0; sudCol < SIZE; sudCol++)
+		{
+			if (puzzleGrid[sudRow][sudCol] == 0)
+			{
+				sudoku_data[sudRow][sudCol] = ' ';
+			}
+			else
+			{
+				sudoku_data[sudRow][sudCol] = puzzleGrid[sudRow][sudCol] + '0';
+			}
+		}
+	}
+		currentSelData = -1;
+	m_n_start_time = GetTickCount();
+	SetTimer(1, 200, NULL);
+	TCHAR ss[100];
+	wsprintf(ss, L"Mistake: %d/3", mistakeCount);
+	m_sz_mistake = ss;
+	UpdateData(false);
+	InvalidateRect(NULL);
+}
+
+void Csudoku_gui_trialDlg::OnBnClickedNewGame()
+{
+	if (MessageBox(L"Do you want to play a new game?", NULL, MB_YESNO) == IDYES)
+	{
+		int sudRow, sudCol;
+		createNewGame();
+		newGame = 1;
+	}
+	// TODO: Add your control notification handler code here
 }
