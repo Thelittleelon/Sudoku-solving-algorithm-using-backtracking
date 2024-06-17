@@ -225,6 +225,7 @@ int Csudoku_gui_trialDlg::draw_grid()
 	CPen* newPen = new CPen(PS_DASH | PS_GEOMETRIC, 3, RGB(0, 0, 0));
 	CPen* pOldPen = (CPen*)dc.SelectObject(newPen);
 
+
 	//Put a horizontal line in the middle of the dialog
 	nDX = (rcClient.right - rcClient.left) / 13;
 	nDY = (rcClient.bottom - rcClient.top) / 13;
@@ -260,6 +261,29 @@ int Csudoku_gui_trialDlg::draw_grid()
 		}
 	}
 
+	CFont font;
+	VERIFY(font.CreateFont(
+		24,                       // nHeight
+		0,                        // nWidth
+		0,                        // nEscapement
+		0,                        // nOrientation
+		FW_NORMAL,                // nWeight
+		FALSE,                    // bItalic
+		FALSE,                    // bUnderline
+		0,                        // cStrikeOut
+		ANSI_CHARSET,             // nCharSet
+		OUT_DEFAULT_PRECIS,       // nOutPrecision
+		CLIP_DEFAULT_PRECIS,      // nClipPrecision
+		DEFAULT_QUALITY,          // nQuality
+		DEFAULT_PITCH | FF_SWISS, // nPitchAndFamily
+		_T("Arial")));            // lpszFacename
+
+								  // Do something with the font just created...
+
+	CFont *def_font = dc.SelectObject(&font);
+//	dc.TextOut(5, 5, _T("Hello"), 5);
+
+
 	for (row = 0; row < 9; row++)
 	{
 		for (col = 0; col < 9; col++)
@@ -269,7 +293,10 @@ int Csudoku_gui_trialDlg::draw_grid()
 			dc.TextOutW(nDX*(col + 1) + nDX / 3, nDY*(row + 1) + nDY / 4, sOut);
 		}
 	}
+	dc.SelectObject(def_font);
 
+	// Done with the font.  Delete the font object.
+	font.DeleteObject();
 	return 0;
 }
 
