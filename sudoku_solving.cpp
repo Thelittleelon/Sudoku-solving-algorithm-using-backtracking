@@ -1,13 +1,12 @@
 #include "stdafx.h"
 #include <stdlib.h>
 #include "math.h"
-
 #define SIZE 9
 
 void printGrid(int grid[SIZE][SIZE]);
 int isSafe(int grid[SIZE][SIZE], int row, int col, int num);
 int findEmptyLocation(int grid[SIZE][SIZE], int *row, int *col);
-int solveSudoku(int grid[SIZE][SIZE], int *solutionCount);
+int solveSudoku(int grid[SIZE][SIZE], int *solutionCount, int solutionGrid[SIZE][SIZE]);
 
 void printGrid(int grid[SIZE][SIZE]) {
 	for (int row = 0; row < SIZE; row++) {
@@ -44,14 +43,15 @@ int findEmptyLocation(int grid[SIZE][SIZE], int *row, int *col) {
 	return 0;
 }
 
-int solveSudoku(int grid[SIZE][SIZE], int *solutionCount) {
+int solveSudoku(int grid[SIZE][SIZE], int *solutionCount, int solutionGrid[SIZE][SIZE]) {
 	int row, col;
 	if (!findEmptyLocation(grid, &row, &col)) {
 		(*solutionCount)++;
-		// Print the first solution found
-		if (*solutionCount == 1) {
-			printf("\nOne of the possible solutions:\n");
-			printGrid(grid);
+		// Copy the current grid to solutionGrid
+		for (int i = 0; i < SIZE; i++) {
+			for (int j = 0; j < SIZE; j++) {
+				solutionGrid[i][j] = grid[i][j];
+			}
 		}
 		return 1; // A solution is found
 	}
@@ -59,7 +59,7 @@ int solveSudoku(int grid[SIZE][SIZE], int *solutionCount) {
 	for (int num = 1; num <= SIZE; num++) {
 		if (isSafe(grid, row, col, num)) {
 			grid[row][col] = num;
-			solveSudoku(grid, solutionCount);
+			solveSudoku(grid, solutionCount, solutionGrid);
 			grid[row][col] = 0; // Backtrack
 		}
 	}
@@ -79,13 +79,24 @@ int main() {
 		{ 0, 0, 0, 0, 8, 0, 0, 7, 9 }
 	};
 
+	int solutionGrid[SIZE][SIZE] = { 0 };
+
 	printf("Given Sudoku Puzzle:\n");
 	printGrid(grid);
 
 	int solutionCount = 0;
-	solveSudoku(grid, &solutionCount);
+	solveSudoku(grid, &solutionCount, solutionGrid);
 
-	printf("\nNumber of possible solutions: %d\n", solutionCount);
 
+	if (solutionCount > 0) {
+		printf("\nOne of the possible solutions:\n");
+		printGrid(solutionGrid);
+		printf("\nNumber of possible solutions: %d\n", solutionCount);
+	}
+
+	else
+	{
+		printf("\nNo solution exists\n");
+	}
 	return 0;
 }
