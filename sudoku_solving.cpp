@@ -1,147 +1,91 @@
-// sudoku_solving.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
+#include <stdlib.h>
+#include "math.h"
 
+#define SIZE 9
 
-#include <iostream>
+void printGrid(int grid[SIZE][SIZE]);
+int isSafe(int grid[SIZE][SIZE], int row, int col, int num);
+int findEmptyLocation(int grid[SIZE][SIZE], int *row, int *col);
+int solveSudoku(int grid[SIZE][SIZE], int *solutionCount);
 
-using namespace std;
-
-// N is the size of the 2D matrix N*N
-#define N 9
-
-/* A utility function to print grid */
-void print(int arr[N][N])
-{
-	for (int i = 0; i < N; i++)
-	{
-		for (int j = 0; j < N; j++)
-			cout << arr[i][j] << " ";
-		cout << endl;
-	}
-}
-
-// Checks whether it will be 
-// legal to assign num to the
-// given row, col
-bool isSafe(int grid[N][N], int row,
-	int col, int num)
-{
-
-	// Check if we find the same num 
-	// in the similar row , we
-	// return false
-	for (int x = 0; x <= 8; x++)
-		if (grid[row][x] == num)
-			return false;
-
-	// Check if we find the same num in 
-	// the similar column , we
-	// return false
-	for (int x = 0; x <= 8; x++)
-		if (grid[x][col] == num)
-			return false;
-
-	// Check if we find the same num in 
-	// the particular 3*3 matrix,
-	// we return false
-	int startRow = row - row % 3,
-		startCol = col - col % 3;
-
-	for (int i = 0; i < 3; i++)
-		for (int j = 0; j < 3; j++)
-			if (grid[i + startRow][j +
-				startCol] == num)
-				return false;
-
-	return true;
-}
-
-/* Takes a partially filled-in grid and attempts
-to assign values to all unassigned locations in
-such a way to meet the requirements for
-Sudoku solution (non-duplication across rows,
-columns, and boxes) */
-bool solveSudoku(int grid[N][N], int row, int col)
-{
-	// Check if we have reached the 8th 
-	// row and 9th column (0
-	// indexed matrix) , we are 
-	// returning true to avoid
-	// further backtracking
-	if (row == N - 1 && col == N)
-		return true;
-
-	// Check if column value becomes 9 , 
-	// we move to next row and
-	// column start from 0
-	if (col == N) {
-		row++;
-		col = 0;
-	}
-
-	// Check if the current position of 
-	// the grid already contains
-	// value >0, we iterate for next column
-	if (grid[row][col] > 0)
-		return solveSudoku(grid, row, col + 1);
-
-	for (int num = 1; num <= N; num++)
-	{
-
-		// Check if it is safe to place 
-		// the num (1-9) in the
-		// given row ,col ->we 
-		// move to next column
-		if (isSafe(grid, row, col, num))
-		{
-
-			/* Assigning the num in
-			the current (row,col)
-			position of the grid
-			and assuming our assigned
-			num in the position
-			is correct	 */
-			grid[row][col] = num;
-
-			// Checking for next possibility with next
-			// column
-			if (solveSudoku(grid, row, col + 1))
-				return true;
+void printGrid(int grid[SIZE][SIZE]) {
+	for (int row = 0; row < SIZE; row++) {
+		for (int col = 0; col < SIZE; col++) {
+			printf("%d ", grid[row][col]);
 		}
-
-		// Removing the assigned num , 
-		// since our assumption
-		// was wrong , and we go for 
-		// next assumption with
-		// diff num value
-		grid[row][col] = 0;
+		printf("\n");
 	}
-	return false;
 }
 
-// Driver Code
-int main()
-{
-	// 0 means unassigned cells
-	int grid[N][N] = { { 0, 0, 0, 3, 4, 0, 0, 1, 0 },
-	{ 0, 5, 0, 0, 0, 6, 0, 0, 0 },
-	{ 4, 7, 0, 0, 0, 0, 5, 6, 0 },
-	{ 6, 0, 0, 0, 0, 0, 0, 0, 0 },
-	{ 0, 3, 4, 1, 0, 0, 0, 8, 0 },
-	{ 0, 0, 0, 5, 0, 8, 0, 0, 7 },
-	{ 5, 6, 0, 0, 0, 3, 0, 0, 0 },
-	{ 0, 0, 0, 6, 8, 0, 1, 0, 0 },
-	{ 1, 0, 7, 2, 5, 4, 0, 0, 0 } };
+int isSafe(int grid[SIZE][SIZE], int row, int col, int num) {
+	for (int x = 0; x < SIZE; x++) {
+		if (grid[row][x] == num || grid[x][col] == num)
+			return 0;
+	}
+	int box_size = sqrt(SIZE);
+	int startRow = row - row % box_size, startCol = col - col % box_size;
+	for (int i = 0; i < box_size; i++) {
+		for (int j = 0; j < box_size; j++) {
+			if (grid[i + startRow][j + startCol] == num)
+				return 0;
+		}
+	}
+	return 1;
+}
 
-	if (solveSudoku(grid, 0, 0))
-		print(grid);
-	else
-		cout << "no solution exists " << endl;
+int findEmptyLocation(int grid[SIZE][SIZE], int *row, int *col) {
+	for (*row = 0; *row < SIZE; (*row)++) {
+		for (*col = 0; *col < SIZE; (*col)++) {
+			if (grid[*row][*col] == 0)
+				return 1;
+		}
+	}
+	return 0;
+}
+
+int solveSudoku(int grid[SIZE][SIZE], int *solutionCount) {
+	int row, col;
+	if (!findEmptyLocation(grid, &row, &col)) {
+		(*solutionCount)++;
+		// Print the first solution found
+		if (*solutionCount == 1) {
+			printf("\nOne of the possible solutions:\n");
+			printGrid(grid);
+		}
+		return 1; // A solution is found
+	}
+
+	for (int num = 1; num <= SIZE; num++) {
+		if (isSafe(grid, row, col, num)) {
+			grid[row][col] = num;
+			solveSudoku(grid, solutionCount);
+			grid[row][col] = 0; // Backtrack
+		}
+	}
+	return 0;
+}
+
+int main() {
+	int grid[SIZE][SIZE] = {
+		{ 5, 3, 0, 0, 7, 0, 0, 0, 0 },
+		{ 6, 0, 0, 1, 9, 5, 0, 0, 0 },
+		{ 0, 9, 8, 0, 0, 0, 0, 6, 0 },
+		{ 8, 0, 0, 0, 6, 0, 0, 0, 3 },
+		{ 4, 0, 0, 8, 0, 3, 0, 0, 1 },
+		{ 7, 0, 0, 0, 2, 0, 0, 0, 6 },
+		{ 0, 6, 0, 0, 0, 0, 2, 8, 0 },
+		{ 0, 0, 0, 4, 1, 9, 0, 0, 5 },
+		{ 0, 0, 0, 0, 8, 0, 0, 7, 9 }
+	};
+
+	printf("Given Sudoku Puzzle:\n");
+	printGrid(grid);
+
+	int solutionCount = 0;
+	solveSudoku(grid, &solutionCount);
+
+	printf("\nNumber of possible solutions: %d\n", solutionCount);
 
 	return 0;
-	// This is code is contributed by Pradeep Mondal P
 }
-
-
